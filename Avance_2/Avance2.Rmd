@@ -1,0 +1,38 @@
+---
+title: "Avance2"
+output: html_document
+date: "2025-11-09"
+---
+
+```{r setup, include=FALSE}
+library(yaml)
+library(tidyverse)
+library(readxl)
+library(lubridate)
+library(janitor)
+library(ggplot2)
+
+source("R/01_load_clean.R")
+source("R/02_transform.R")
+source("R/03_eda.R")
+
+cfg <- yaml::read_yaml("config.yml")
+file_path <- cfg$default$file_path
+sheet     <- cfg$default$sheet
+
+knitr::opts_chunk$set(echo = FALSE)
+
+```
+
+
+```{r load-data}
+df_raw <- load_and_clean(file_path, sheet)
+df     <- transform_data(df_raw)
+
+```
+
+
+```{r eda}
+eda <- run_eda(df)
+
+```
