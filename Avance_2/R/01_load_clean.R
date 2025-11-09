@@ -1,26 +1,26 @@
 # 1) Cargar el archivo CSV y limpiar nombres
 
 # Cargar paquetes
-library(tidyverse)
-library(rstatix)
-library(ggpubr)
-library(readxl)
-library(janitor)
-library(dplyr)
-library(nortest)
+#library(tidyverse)
+#library(rstatix)
+#library(ggpubr)
+#library(readxl)
+#library(janitor)
+#library(dplyr)
+#library(nortest)
 
-load_and_clean <- function(sheet = "data") {
+load_and_clean <- function(file_path, sheet) {
   
   
   # Validate sheet exists (nice safeguard)
-  sheets <- readxl::excel_sheets("Data/dataProyecto-1.xlsx")
+  sheets <- readxl::excel_sheets(file_path)
   if (!(sheet %in% sheets)) {
-    stop(sprintf("Sheet '%s' not found. Available: %s",
-                 sheet, paste(sheets, collapse = ", ")))
+    stop(sprintf("Sheet '%s' not found in %s. Available sheets: %s",
+                 sheet, file_path, paste(sheets, collapse = ", ")))
   }
   
   # Load data (adjust sheet if needed)
-  df <- read_excel("Data/dataProyecto-1.xlsx", sheet = sheet) %>%
+  df <- readxl::read_excel(file_path, sheet = sheet) %>%
     clean_names()
   
   # Basic cleaning
