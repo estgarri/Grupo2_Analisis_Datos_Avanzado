@@ -36,3 +36,31 @@ df     <- transform_data(df_raw)
 eda <- run_eda(df)
 
 ```
+
+```{r}
+eda$top_sku_units
+
+```
+
+```{r}
+eda$top_countries
+
+```
+
+```{r}
+eda$monthly_sales
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

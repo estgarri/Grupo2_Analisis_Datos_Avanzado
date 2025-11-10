@@ -4,3 +4,6 @@
 default:
   file_path: "Data/dataProyecto-1.xlsx"
   sheet: "data"
+  
+paths:
+  plots: "Plots"
