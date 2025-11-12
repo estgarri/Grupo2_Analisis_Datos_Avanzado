@@ -1,0 +1,293 @@
+---
+title: "Caso2"
+output: html_document
+date: ""
+---
+
+## Carga librerias
+
+```{r}
+
+# Cargar librerías necesarias
+library(yaml)
+library(tidyverse)
+library(readxl)
+library(lubridate)
+library(janitor)
+library(ggplot2)
+
+```
+
+## Cargar base de datos y EDA
+
+```{r}
+car_data <- read_csv("../Data/CAR DETAILS FROM CAR DEKHO.csv")
+
+head(car_data)
+dim(car_data)
+glimpse(car_data)
+summary(car_data)
+
+
+```
+
+## Limpieza de datos (basica)
+
+```{r}
+car_data <- car_data %>%
+rename(
+  nombre_carro = name,
+  año = year,
+  precio_vendido = selling_price,
+  kms_recorridos = km_driven,
+  combustible = fuel,
+  vendedor = seller_type,
+  transmisión = transmission,
+  propietario = owner
+)
+
+## Eliminar filas duplicadas
+
+car_data <- car_data %>%
+distinct()
+
+## Eliminar NA's
+
+car_data <- car_data %>%
+drop_na()
+
+
+## Confirmar limpieza
+
+glimpse(car_data)
+colSums(is.na(car_data))
+
+## Vista final
+
+head(car_data, 10)
+
+
+```
+```{r}
+# Matriz de correlación entre precio_vendido, año y kms_recorridos
+
+num_df <- car_data %>%
+select(precio_vendido, `año`, kms_recorridos)
+
+cor_mat <- cor(num_df, use = "complete.obs")
+cor_mat
+
+```
+
+```{r}
+# Heatmap simple de correlación
+
+corr_df <- as.data.frame(as.table(cor_mat))
+ggplot(corr_df, aes(Var1, Var2, fill = Freq)) +
+geom_tile() +
+geom_text(aes(label = round(Freq, 2))) +
+labs(title = "Matriz de correlación", x = NULL, y = NULL) +
+guides(fill = "none")
+
+```
+
+```{r}
+# Ajuste del modelo
+
+m1 <- lm(precio_vendido ~ kms_recorridos, data = car_data)
+
+# Resumen del modelo
+
+summary(m1)
+
+```
+
+```{r}
+# Extraer coeficientes y R² para reportar la ecuación
+
+b0 <- coef(m1)[1]
+b1 <- coef(m1)[2]
+r2 <- summary(m1)$r.squared
+adj_r2 <- summary(m1)$adj.r.squared
+
+b0; b1; r2; adj_r2
+
+```
+
+
+```{r}
+#Scatter con recta de regresión
+
+ggplot(car_data, aes(x = kms_recorridos, y = precio_vendido)) +
+geom_point(alpha = 0.4) +
+geom_smooth(method = "lm", se = FALSE) +
+labs(
+title = "precio_vendido vs kms_recorridos (modelo lineal)",
+x = "Kilómetros recorridos",
+y = "Precio de venta"
+)
+```
+
+```{r}
+# Modelo múltiple
+
+m2 <- lm(precio_vendido ~ kms_recorridos + año, data = car_data)
+
+# Resumen del modelo
+
+summary(m2)
+
+```
+
+```{r}
+# Comparación con el modelo simple
+
+anova(m1, m2)
+
+```
+
+```{r}
+# Diagnóstico de multicolinealidad (si car está instalado)
+
+# install.packages("car")  # ejecutar solo una vez
+
+library(car)
+vif(m2)
+
+```
+
+
+
+
+```{r}
+# Efecto parcial (gráfico opcional)
+
+ggplot(car_data, aes(x = año, y = precio_vendido)) +
+geom_point(alpha = 0.4) +
+geom_smooth(method = "lm", se = FALSE, color = "blue") +
+labs(title = "precio_vendido vs año (controlando kms_recorridos)")
+
+```
+
+```{r}
+library(scales)
+
+ggplot(car_data, aes(x = kms_recorridos, y = precio_vendido)) +
+  geom_point(alpha = 0.2, size = 1) +
+  geom_smooth(method = "lm", se = FALSE) +
+  scale_x_log10(labels = label_comma()) +
+  scale_y_log10(labels = label_comma()) +
+  labs(title = "Precio vs Km (escala log–log)",
+       x = "Kilómetros (log10)", y = "Precio (log10)")
+
+```
+```{r}
+ggplot(car_data, aes(x = kms_recorridos, y = precio_vendido)) +
+  stat_summary_bin(bins = 40, fun = median, geom = "point", size = 2) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Precio vs Km (puntos = mediana por bin)",
+       x = "Kilómetros recorridos", y = "Precio de venta")
+
+```
+
+```{r}
+car_year <- car_data %>%
+  group_by(`año`) %>%
+  summarise(mediana = median(precio_vendido, na.rm = TRUE),
+            q25 = quantile(precio_vendido, 0.25, na.rm = TRUE),
+            q75 = quantile(precio_vendido, 0.75, na.rm = TRUE))
+
+ggplot(car_year, aes(x = `año`, y = mediana)) +
+  geom_ribbon(aes(ymin = q25, ymax = q75), alpha = 0.2) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Precio por año (mediana con IQR)",
+       x = "Año", y = "Precio de venta")
+
+```
+
+```{r}
+ggplot(car_data, aes(x = kms_recorridos, y = precio_vendido)) +
+  geom_point(alpha = 0.15, size = 0.8) +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(~ combustible) +
+  labs(title = "Precio vs Km por tipo de combustible",
+       x = "Kilómetros recorridos", y = "Precio de venta")
+
+```
+
+```{r}
+m1_log <- lm(log(precio_vendido) ~ log(kms_recorridos), data = car_data)
+summary(m1_log)
+
+```
+
+```{r}
+library(scales)
+
+ggplot(car_data, aes(x = kms_recorridos, y = precio_vendido)) +
+  stat_summary_bin(bins = 40, fun = median, geom = "point", size = 2) +
+  geom_smooth(method = "lm", se = FALSE) +
+  scale_x_continuous(labels = label_comma()) +
+  scale_y_continuous(labels = label_comma()) +
+  labs(title = "Precio vs Km (puntos = mediana por bin)",
+       x = "Kilómetros recorridos", y = "Precio de venta")
+
+```
+
+```{r}
+library(scales)
+
+# Medias y conteos por grupo
+resumen_tx <- car_data %>%
+  group_by(`transmisión`) %>%
+  summarise(
+    n = n(),
+    media = mean(precio_vendido, na.rm = TRUE),
+    mediana = median(precio_vendido, na.rm = TRUE),
+    sd = sd(precio_vendido, na.rm = TRUE)
+  )
+resumen_tx
+
+# t-test Welch (por defecto)
+t_trans <- t.test(precio_vendido ~ `transmisión`, data = car_data)
+t_trans
+
+```
+
+```{r}
+# Boxplot con jitter y ejes legibles
+ggplot(car_data, aes(x = `transmisión`, y = precio_vendido)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.15, size = 0.7) +
+  scale_y_continuous(labels = label_comma()) +
+  labs(title = "Precio por tipo de transmisión",
+       x = "Transmisión", y = "Precio de venta")
+
+```
+
+
+```{r}
+#Rotar ejes (más legible)
+ggplot(car_data, aes(x = `transmisión`, y = precio_vendido)) +
+  geom_boxplot(outlier.shape = NA, fill = "grey85") +
+  geom_jitter(width = 0.15, alpha = 0.15, size = 0.7) +
+  scale_y_continuous(labels = label_comma()) +
+  labs(title = "Precio por tipo de transmisión",
+       x = "Transmisión", y = "Precio de venta") +
+  coord_flip()
+
+```
+
+```{r}
+#Escala logarítmica en Y (para recortar extremos sin perder datos)
+
+ggplot(car_data, aes(x = `transmisión`, y = precio_vendido)) +
+  geom_boxplot(outlier.shape = NA, fill = "grey85") +
+  geom_jitter(width = 0.15, alpha = 0.15, size = 0.7) +
+  scale_y_log10(labels = label_comma()) +
+  labs(title = "Precio por tipo de transmisión (escala log10)",
+       x = "Transmisión", y = "Precio de venta (log)") 
+
+```
+

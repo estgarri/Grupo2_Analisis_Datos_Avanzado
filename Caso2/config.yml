@@ -1,0 +1,5 @@
+# This acts like application.properties in Java/Spring or .env in Node.
+
+default:
+  file_path: "Data/dataProyecto-1.xlsx"
+  sheet: "data"
